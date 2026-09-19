@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Hide YouTube Shorts",
   "version": "1.0",
   "description": "隱藏 YouTube 上所有短影音（Shorts）相關元素，包含側邊欄連結、首頁區塊、搜尋結果與影片卡片。",
@@ -7,7 +7,7 @@
   "homepage_url": "https://github.com/shaoahs/hide-youtube-shorts",
   "browser_specific_settings": {
     "gecko": {
-      "id": "hide-youtube-shorts@example.com",
+      "id": "hide-youtube-shorts@black",
       "strict_min_version": "57.0"
     }
   },

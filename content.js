@@ -1,25 +1,23 @@
-function hideShorts() {
-  const selectors = [
-    // 側邊欄 Shorts 連結
-    'a[href^="/shorts"]',
-    // 首頁 Shorts 區塊
-    'ytd-rich-shelf-renderer[is-shorts]',
-    // 搜尋結果中的 Shorts 區塊
-    'ytd-reel-shelf-renderer',
-    // Shorts 影片卡片
-    'ytd-short-shelf-renderer',
-  ];
+const style = document.createElement("style");
+style.textContent = `
+  /* Hide shorts */
+  a[href^="/shorts"],
+  ytd-rich-shelf-renderer[is-shorts],
+  ytd-reel-shelf-renderer,
+  ytd-short-shelf-renderer {
+    display: none !important;
+  }
 
-  selectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => {
-      el.style.display = 'none';
-    });
-  });
-}
+  /* primary: hide #primary-inner */
+  #primary-inner {
+    display: none !important;
+  }
 
-// 初次執行
-hideShorts();
-
-// YouTube 是 SPA，需要監控 DOM 變化
-const observer = new MutationObserver(hideShorts);
-observer.observe(document.body, { childList: true, subtree: true });
+  /* secondary: wrap horizontally */
+  #secondary {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+`;
+document.head.appendChild(style);
