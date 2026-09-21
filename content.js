@@ -23,6 +23,7 @@ let titleClone = null;
 let controlsClone = null;
 let titleVisible = false;
 let controlsVisible = false;
+let sidebarVisible = false;
 
 function injectWatchStyle() {
   let el = document.getElementById("yt-overlay-style");
@@ -30,18 +31,39 @@ function injectWatchStyle() {
   el = document.createElement("style");
   el.id = "yt-overlay-style";
   el.textContent = `
-    /* Hide #primary on watch page */
-    ytd-watch-flexy #primary {
+    /* Hide #below on watch page (description, recommendations, etc.) */
+    ytd-watch-flexy #below {
       display: none !important;
+    }
+
+    /* #secondary: independent scroll, fixed to viewport height */
+    ytd-watch-flexy #secondary {
+      display: none;
+      position: fixed !important;
+      top: 0;
+      right: 0;
+      width: 420px;
+      height: 100vh;
+      overflow-y: auto !important;
+      overflow-x: hidden;
+      z-index: 9990;
+      background: #0f0f0f;
+      box-sizing: border-box;
+      padding-top: 8px;
+    }
+    ytd-watch-flexy #secondary.yt-side-visible {
+      display: block;
     }
 
     /* Hide controls by default; toggled by ctrl button */
-    #ytp-chrome-controls {
+    #movie_player .ytp-chrome-controls,
+    #movie_player .ytp-progress-bar-container {
       display: none !important;
     }
 
-    /* Only show html5-video-container; hide everything else */
-    #movie_player > *:not(.html5-video-container) {
+    /* Always hidden */
+    .ytp-overlays-container,
+    .ytp-iv-video-content {
       display: none !important;
     }
 
@@ -49,7 +71,7 @@ function injectWatchStyle() {
     #yt-overlay-root {
       position: fixed;
       bottom: 32px;
-      right: 32px;
+      left: 32px;
       z-index: 9999;
       display: flex;
       flex-direction: column;
@@ -139,11 +161,16 @@ function injectWatchStyle() {
 
   `;
   document.head.appendChild(el);
+
+  // Insert controls toggle style AFTER yt-overlay-style so it wins
+  getControlsStyleEl();
 }
 
 function removeWatchStyle() {
   const el = document.getElementById("yt-overlay-style");
   if (el) el.remove();
+  const ctrlEl = document.getElementById("yt-controls-toggle-style");
+  if (ctrlEl) ctrlEl.remove();
 }
 
 function buildOverlay() {
@@ -176,8 +203,16 @@ function buildOverlay() {
   controlsBtn.title = "Toggle controls";
   controlsBtn.addEventListener("click", toggleControls);
 
+  // Side tile
+  const sideBtn = document.createElement("button");
+  sideBtn.className = "yt-tile";
+  sideBtn.textContent = "side";
+  sideBtn.title = "Toggle sidebar";
+  sideBtn.addEventListener("click", toggleSidebar);
+
   tileList.appendChild(titleBtn);
   tileList.appendChild(controlsBtn);
+  tileList.appendChild(sideBtn);
 
   // Main button
   const mainBtn = document.createElement("button");
@@ -203,6 +238,7 @@ function removeOverlay() {
 
   removeClonedTitle();
   removeClonedControls();
+  removeSidebar();
   removeWatchStyle();
 }
 
@@ -256,7 +292,8 @@ function toggleControls() {
   } else {
     styleEl.textContent = `
       #movie_player > .ytp-chrome-bottom { display: block !important; }
-      #ytp-chrome-controls { display: flex !important; }
+      #movie_player .ytp-chrome-controls { display: flex !important; }
+      #movie_player .ytp-progress-bar-container { display: block !important; }
     `;
     controlsVisible = true;
     if (btn) btn.classList.add("active");
@@ -268,6 +305,28 @@ function removeClonedControls() {
   if (styleEl) styleEl.textContent = "";
   controlsClone = null;
   controlsVisible = false;
+}
+
+// ── Sidebar toggle ───────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const btn = document.querySelector("#yt-tile-list .yt-tile:nth-child(3)");
+  const secondary = document.querySelector("ytd-watch-flexy #secondary");
+  if (!secondary) return;
+  if (sidebarVisible) {
+    secondary.classList.remove("yt-side-visible");
+    sidebarVisible = false;
+    if (btn) btn.classList.remove("active");
+  } else {
+    secondary.classList.add("yt-side-visible");
+    sidebarVisible = true;
+    if (btn) btn.classList.add("active");
+  }
+}
+
+function removeSidebar() {
+  const secondary = document.querySelector("ytd-watch-flexy #secondary");
+  if (secondary) secondary.classList.remove("yt-side-visible");
+  sidebarVisible = false;
 }
 
 // ── SPA navigation observer ──────────────────────────────────────────────────
