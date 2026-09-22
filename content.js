@@ -20,10 +20,10 @@ function isWatchPage() {
 let overlayRoot = null;
 let overlayExpanded = false;
 let titleClone = null;
-let controlsClone = null;
 let titleVisible = false;
 let controlsVisible = false;
 let sidebarVisible = false;
+let disabledMode = false; // cmmt tile: disable all hiding rules
 
 function injectWatchStyle() {
   let el = document.getElementById("yt-overlay-style");
@@ -38,7 +38,7 @@ function injectWatchStyle() {
 
     /* #secondary: independent scroll, fixed to viewport height */
     ytd-watch-flexy #secondary {
-      display: none;
+      display: none !important;
       position: fixed !important;
       top: 0;
       right: 0;
@@ -52,7 +52,7 @@ function injectWatchStyle() {
       padding-top: 8px;
     }
     ytd-watch-flexy #secondary.yt-side-visible {
-      display: block;
+      display: block !important;
     }
 
     /* Hide controls by default; toggled by ctrl button */
@@ -118,7 +118,7 @@ function injectWatchStyle() {
       transition: max-height 0.25s ease;
     }
     #yt-tile-list.expanded {
-      max-height: 200px;
+      max-height: 260px;
     }
 
     /* Main toggle button */
@@ -210,9 +210,17 @@ function buildOverlay() {
   sideBtn.title = "Toggle sidebar";
   sideBtn.addEventListener("click", toggleSidebar);
 
+  // Disable tile
+  const disableBtn = document.createElement("button");
+  disableBtn.className = "yt-tile";
+  disableBtn.textContent = "orig";
+  disableBtn.title = "Disable / Enable all hiding rules";
+  disableBtn.addEventListener("click", toggleDisable);
+
   tileList.appendChild(titleBtn);
   tileList.appendChild(controlsBtn);
   tileList.appendChild(sideBtn);
+  tileList.appendChild(disableBtn);
 
   // Main button
   const mainBtn = document.createElement("button");
@@ -233,12 +241,15 @@ function buildOverlay() {
 function removeOverlay() {
   const el = document.getElementById("yt-overlay-root");
   if (el) el.remove();
+  const origBtn = document.getElementById("yt-orig-btn");
+  if (origBtn) origBtn.remove();
   overlayRoot = null;
   overlayExpanded = false;
 
   removeClonedTitle();
   removeClonedControls();
-  removeSidebar();
+  hideSidebar();
+  enableAllRules();
   removeWatchStyle();
 }
 
@@ -269,9 +280,6 @@ function removeClonedTitle() {
 }
 
 // ── Controls toggle ──────────────────────────────────────────────────────────
-// #ytp-chrome-controls is inside a same-origin iframe; CSS from the main
-// document can target it, but JS getElementById cannot. Use a separate
-// <style> tag to toggle: empty = hidden (base rule), filled = override show.
 function getControlsStyleEl() {
   let el = document.getElementById("yt-controls-toggle-style");
   if (!el) {
@@ -303,8 +311,19 @@ function toggleControls() {
 function removeClonedControls() {
   const styleEl = document.getElementById("yt-controls-toggle-style");
   if (styleEl) styleEl.textContent = "";
-  controlsClone = null;
   controlsVisible = false;
+}
+
+function enableControls() {
+  const styleEl = getControlsStyleEl();
+  styleEl.textContent = `
+    #movie_player > .ytp-chrome-bottom { display: block !important; }
+    #movie_player .ytp-chrome-controls { display: flex !important; }
+    #movie_player .ytp-progress-bar-container { display: block !important; }
+  `;
+  controlsVisible = true;
+  const btn = document.querySelector("#yt-tile-list .yt-tile:nth-child(2)");
+  if (btn) btn.classList.add("active");
 }
 
 // ── Sidebar toggle ───────────────────────────────────────────────────────────
@@ -323,18 +342,106 @@ function toggleSidebar() {
   }
 }
 
-function removeSidebar() {
+function hideSidebar() {
   const secondary = document.querySelector("ytd-watch-flexy #secondary");
   if (secondary) secondary.classList.remove("yt-side-visible");
   sidebarVisible = false;
+  const btn = document.querySelector("#yt-tile-list .yt-tile:nth-child(3)");
+  if (btn) btn.classList.remove("active");
+}
+
+// ── Disable / Enable all hiding rules (orig tile) ────────────────────────────
+// disable: remove yt-overlay-style so YouTube shows its original layout
+// enable:  re-inject yt-overlay-style
+function toggleDisable() {
+  const btn = document.querySelector("#yt-tile-list .yt-tile:nth-child(4)");
+  if (disabledMode) {
+    enableAllRules();
+  } else {
+    disableAllRules();
+  }
+}
+
+function disableAllRules() {
+  const el = document.getElementById("yt-overlay-style");
+  if (el) el.disabled = true;
+  disabledMode = true;
+  // Hide the main overlay, show only the standalone orig button
+  const root = document.getElementById("yt-overlay-root");
+  if (root) root.style.display = "none";
+  let origBtn = document.getElementById("yt-orig-btn");
+  if (!origBtn) {
+    origBtn = document.createElement("button");
+    origBtn.id = "yt-orig-btn";
+    origBtn.textContent = "orig";
+    origBtn.style.cssText = `
+      position: fixed;
+      bottom: 32px;
+      left: 32px;
+      z-index: 9999;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(200, 50, 50, 0.9);
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    `;
+    origBtn.addEventListener("click", toggleDisable);
+    document.body.appendChild(origBtn);
+  }
+  origBtn.style.display = "flex";
+  origBtn.style.alignItems = "center";
+  origBtn.style.justifyContent = "center";
+}
+
+function enableAllRules() {
+  const el = document.getElementById("yt-overlay-style");
+  if (el) el.disabled = false;
+  disabledMode = false;
+  // Restore main overlay, hide standalone orig button
+  const root = document.getElementById("yt-overlay-root");
+  if (root) root.style.display = "";
+  const origBtn = document.getElementById("yt-orig-btn");
+  if (origBtn) origBtn.style.display = "none";
+}
+
+// ── Title text observer ──────────────────────────────────────────────────────
+let titleObserver = null;
+
+function startTitleObserver() {
+  if (titleObserver) return;
+  const src = document.querySelector("ytd-watch-metadata #title-row #title");
+  if (!src) return;
+
+  titleObserver = new MutationObserver(() => {
+    const el = document.getElementById("yt-cloned-title");
+    if (el && titleVisible) el.textContent = src.textContent.trim();
+  });
+  titleObserver.observe(src, { childList: true, subtree: true, characterData: true });
+}
+
+function stopTitleObserver() {
+  if (titleObserver) { titleObserver.disconnect(); titleObserver = null; }
 }
 
 // ── SPA navigation observer ──────────────────────────────────────────────────
 function onNavigate() {
   if (isWatchPage()) {
     // Wait for #columns to appear
-    waitForElement("#columns", buildOverlay);
+    waitForElement("#columns", () => {
+      buildOverlay();
+      // ctrl is on by default for every video
+      enableControls();
+    });
+
+    // Start observing title text changes
+    waitForElement("ytd-watch-metadata #title-row #title", startTitleObserver);
   } else {
+    stopTitleObserver();
     removeOverlay();
   }
 }
