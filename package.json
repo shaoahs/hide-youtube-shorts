@@ -1,0 +1,16 @@
+{
+  "name": "hide-youtube-shorts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "rolldown -c rolldown.config.js",
+    "watch": "rolldown -c rolldown.config.js --watch"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "rolldown": "^1.2.12"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}

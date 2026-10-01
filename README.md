@@ -47,6 +47,28 @@
 2. 右上角開啟「開發人員模式」
 3. 「載入未封裝項目」→ 選擇此資料夾
 
+## 開發
+
+```bash
+# 安裝依賴
+bun install
+
+# 打包（輸出至 content.js）
+bun run build
+
+# 監聽檔案變更自動重新打包
+bun run watch
+```
+
+import 路徑使用兩個 alias：
+
+```js
+import { ... } from "src/config";    // src/ 下的主模組
+import { ... } from "filters/title"; // src/filters/ 下的子模組
+```
+
+alias 定義於 `rolldown.config.js` 的 `resolve.alias`。
+
 ## 打包
 
 ```bash
@@ -57,14 +79,26 @@ zip -r ../hide-youtube-shorts.xpi manifest.json content.js icons/icon-48.png ico
 
 ```
 hide-youtube-shorts/
-  manifest.json      # 擴充套件設定（Manifest v3）
-  content.js         # Shorts 隱藏 + 影片頁面 Overlay 邏輯
-  icons/
-    icon-48.png
-    icon-96.png
-    icon.svg
-  README.md
-  CHANGELOG.md
+├── src/
+│   ├── index.js          # 入口、導航事件
+│   ├── config.js         # 共用狀態
+│   ├── styles.js         # 所有 CSS 注入
+│   ├── overlay.js        # buildOverlay、removeOverlay
+│   └── filters/
+│       ├── title.js      # 標題 clone 與 observer
+│       ├── controls.js   # 播放控制列開關
+│       ├── sidebar.js    # 側邊欄開關
+│       └── disable.js    # 全部規則停用／啟用
+├── manifest.json         # 擴充套件設定（Manifest v3）
+├── content.js            # 打包輸出（勿手動編輯）
+├── rolldown.config.js    # 打包設定（含 alias）
+├── package.json
+├── icons/
+│   ├── icon-48.png
+│   ├── icon-96.png
+│   └── icon.svg
+├── README.md
+└── CHANGELOG.md
 ```
 
 ## 注意

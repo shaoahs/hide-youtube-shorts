@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.0] - 2026-10-01
+
+### Changed
+- 將單一 `content.js` 重構為多模組架構（`src/`）
+- 加入 rolldown 打包設定（`rolldown.config.js`）
+- 加入 `package.json`，使用 bun 管理開發依賴
+- import 路徑使用 `src/` 與 `filters/` alias
+
+### Added
+- `src/index.js` — 入口、導航事件、waitForElement
+- `src/config.js` — 共用狀態與 setter
+- `src/styles.js` — 所有 CSS 注入（globalStyle、watchStyle、controlsStyle）
+- `src/overlay.js` — buildOverlay、removeOverlay
+- `src/filters/title.js` — 標題 clone 與 MutationObserver
+- `src/filters/controls.js` — 播放控制列開關
+- `src/filters/sidebar.js` — 側邊欄開關
+- `src/filters/disable.js` — 全部規則停用／啟用
+
+---
+
 ## [1.4.0] - 2026-09-21
 
 ### Fixed
