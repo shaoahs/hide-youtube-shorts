@@ -1,4 +1,8 @@
+# 依賴
+node_modules
+
 # 打包輸出
+content.js
 *.xpi
 *.zip
 
