@@ -210,6 +210,12 @@ export function injectWatchStyle() {
       font-weight: bold;
       pointer-events: none;
     }
+
+    /* Fullscreen: title inside player, position absolute */
+    #movie_player #yt-cloned-title {
+      position: absolute;
+      z-index: 95;
+    }
   `;
   document.head.appendChild(el);
 

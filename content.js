@@ -212,6 +212,12 @@
       font-weight: bold;
       pointer-events: none;
     }
+
+    /* Fullscreen: title inside player, position absolute */
+    #movie_player #yt-cloned-title {
+      position: absolute;
+      z-index: 95;
+    }
   `;
 		document.head.appendChild(el);
 		getControlsStyleEl();
@@ -278,7 +284,9 @@
 		titleClone = document.createElement("div");
 		titleClone.id = "yt-cloned-title";
 		titleClone.textContent = src.textContent.trim();
-		document.body.appendChild(titleClone);
+		const player = document.getElementById("movie_player");
+		if (document.fullscreenElement && player) player.appendChild(titleClone);
+		else document.body.appendChild(titleClone);
 		setTitleVisible(true);
 		if (btn) btn.classList.add("active");
 	}
@@ -646,17 +654,20 @@
 		const onFullscreenChange = () => {
 			const root = document.getElementById("yt-overlay-root");
 			const hz = document.getElementById("yt-overlay-hotzone");
+			const titleEl = document.getElementById("yt-cloned-title");
 			if (!root) return;
 			const player = document.getElementById("movie_player");
 			if (document.fullscreenElement && player) {
 				player.appendChild(hz);
 				player.appendChild(root);
+				if (titleEl) player.appendChild(titleEl);
 			} else {
 				const cols = document.getElementById("columns");
 				if (cols) {
 					cols.appendChild(hz);
 					cols.appendChild(root);
 				}
+				if (titleEl) document.body.appendChild(titleEl);
 			}
 			fsBtn.innerHTML = document.fullscreenElement ? ICONS.exitFullscreen : ICONS.fullscreen;
 		};

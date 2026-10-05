@@ -199,17 +199,20 @@ export function buildOverlay() {
   const onFullscreenChange = () => {
     const root = document.getElementById("yt-overlay-root");
     const hz   = document.getElementById("yt-overlay-hotzone");
+    const titleEl = document.getElementById("yt-cloned-title");
     if (!root) return;
     const player = document.getElementById("movie_player");
     if (document.fullscreenElement && player) {
       player.appendChild(hz);
       player.appendChild(root);
+      if (titleEl) player.appendChild(titleEl);
     } else {
       const cols = document.getElementById("columns");
       if (cols) {
         cols.appendChild(hz);
         cols.appendChild(root);
       }
+      if (titleEl) document.body.appendChild(titleEl);
     }
     // Sync fullscreen button icon
     fsBtn.innerHTML = document.fullscreenElement ? ICONS.exitFullscreen : ICONS.fullscreen;

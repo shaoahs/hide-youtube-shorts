@@ -20,6 +20,8 @@
 ### Fixed
 - 切換影片時 title clone 消失問題：改用 `showTitleDefault()` 強制重建，不依賴 `titleVisible` 狀態
 - `startTitleObserver()` 每次重新 disconnect 再綁定，確保追蹤新影片的 title 元素
+- 全螢幕時 title 無法顯示：進入全螢幕時將 `#yt-cloned-title` 移入 `#movie_player`，離開時移回 `document.body`
+- 全螢幕中切換影片時 title 消失：`showTitle()` 判斷 `document.fullscreenElement`，直接 append 至正確容器
 
 ---
 

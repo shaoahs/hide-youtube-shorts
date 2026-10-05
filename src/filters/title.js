@@ -18,7 +18,15 @@ function showTitle() {
   titleClone = document.createElement("div");
   titleClone.id = "yt-cloned-title";
   titleClone.textContent = src.textContent.trim();
-  document.body.appendChild(titleClone);
+
+  // Append to player when in fullscreen, otherwise to body
+  const player = document.getElementById("movie_player");
+  if (document.fullscreenElement && player) {
+    player.appendChild(titleClone);
+  } else {
+    document.body.appendChild(titleClone);
+  }
+
   setTitleVisible(true);
   if (btn) btn.classList.add("active");
 }
