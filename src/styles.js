@@ -115,12 +115,20 @@ export function injectWatchStyle() {
     }
 
     /* When overlay is reparented inside #movie_player during fullscreen,
-       it needs to sit above all player UI layers. */
+       it needs to sit above all player UI layers.
+       bottom offset is set dynamically in JS based on .ytp-chrome-bottom height. */
     #movie_player #yt-overlay-root {
       z-index: 99;
+      bottom: auto;
+      top: 60%;
+      transform: translateY(-50%);
     }
     #movie_player #yt-overlay-hotzone {
       z-index: 98;
+      bottom: auto;
+      top: 50%;
+      height: 200px;
+      transform: translateY(-50%);
     }
 
     /* Tiles (shown above the main button) */
