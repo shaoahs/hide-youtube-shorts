@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.6.0] - 2026-10-05
+
+### Added
+- 全螢幕支援：進入全螢幕時，overlay 控制介面與側邊欄自動移入 `#movie_player`，離開時恢復原位
+- Overlay 自動隱藏：載入後 6 秒自動淡出；滑鼠移入左下角熱區後重新顯示，4 秒無操作再次隱藏
+- 新增 `fs` tile：切換全螢幕，圖示隨狀態同步（展開／收縮四角）
+- 所有 tile 與主按鈕改為 inline SVG 圖示，移除文字標籤
+- `orig` tile 改為 toggle switch 圖示：規則啟用時圓點在右（ON），停用時圓點在左（OFF）
+- `title` tile 改為橫向長方形色塊圖示
+- `ctrl` tile 改為播放三角 + 單行進度條圖示
+- 進入影片頁面預設自動顯示標題（title tile 預設 active）
+
+### Changed
+- 全螢幕時 side 側邊欄改用 `position: absolute` 覆蓋於播放器右側（半透明黑底）
+- 全螢幕時側邊欄捲動不再冒泡至播放器（修正誤觸快進／快退問題）
+- `.ytp-fullscreen-grid`（含 expand button）z-index 拉高至 91，確保不被側邊欄遮蓋
+
+### Fixed
+- 切換影片時 title clone 消失問題：改用 `showTitleDefault()` 強制重建，不依賴 `titleVisible` 狀態
+- `startTitleObserver()` 每次重新 disconnect 再綁定，確保追蹤新影片的 title 元素
+
+---
+
 ## [1.5.0] - 2026-10-01
 
 ### Changed

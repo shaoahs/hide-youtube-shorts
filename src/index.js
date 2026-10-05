@@ -1,6 +1,6 @@
 import { injectGlobalStyle } from "src/styles";
 import { buildOverlay, removeOverlay, enableControls } from "src/overlay";
-import { startTitleObserver, stopTitleObserver } from "filters/title";
+import { showTitleDefault, startTitleObserver, stopTitleObserver } from "filters/title";
 
 function isWatchPage() {
   return location.pathname === "/watch";
@@ -26,7 +26,10 @@ function onNavigate() {
       buildOverlay();
       enableControls();
     });
-    waitForElement("ytd-watch-metadata #title-row #title", startTitleObserver);
+    waitForElement("ytd-watch-metadata #title-row #title", () => {
+      startTitleObserver();
+      showTitleDefault(); // show title by default
+    });
   } else {
     stopTitleObserver();
     removeOverlay();

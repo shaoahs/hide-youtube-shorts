@@ -44,6 +44,30 @@ export function injectWatchStyle() {
       display: block !important;
     }
 
+    /* Fullscreen: #secondary lives inside #movie_player, overlay on the right */
+    #movie_player #secondary[data-yt-fs-sidebar] {
+      display: none !important;
+      position: absolute !important;
+      top: 0;
+      right: 0;
+      width: 380px;
+      height: 100%;
+      overflow-y: auto !important;
+      overflow-x: hidden;
+      z-index: 90;
+      background: rgba(10, 10, 10, 0.92);
+      box-sizing: border-box;
+      padding-top: 8px;
+    }
+    #movie_player #secondary[data-yt-fs-sidebar].yt-side-visible {
+      display: block !important;
+    }
+
+    /* Keep the fullscreen-grid expand button above the sidebar */
+    #movie_player .ytp-fullscreen-grid {
+      z-index: 91 !important;
+    }
+
     /* Hide controls by default; toggled by ctrl button */
     #movie_player .ytp-chrome-controls,
     #movie_player .ytp-progress-bar-container {
@@ -67,6 +91,36 @@ export function injectWatchStyle() {
       align-items: center;
       gap: 10px;
       pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+    #yt-overlay-root.yt-overlay-hidden {
+      opacity: 0;
+      pointer-events: none !important;
+    }
+    /* pointer-events back on when visible */
+    #yt-overlay-root:not(.yt-overlay-hidden) {
+      pointer-events: none; /* root itself is passthrough; children opt-in */
+    }
+
+    /* Transparent hotzone at bottom-left — always present, catches mouseenter */
+    #yt-overlay-hotzone {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 160px;
+      height: 100px;
+      z-index: 9998;
+      pointer-events: all;
+    }
+
+    /* When overlay is reparented inside #movie_player during fullscreen,
+       it needs to sit above all player UI layers. */
+    #movie_player #yt-overlay-root {
+      z-index: 99;
+    }
+    #movie_player #yt-overlay-hotzone {
+      z-index: 98;
     }
 
     /* Tiles (shown above the main button) */
@@ -78,8 +132,6 @@ export function injectWatchStyle() {
       border: none;
       background: rgba(30, 30, 30, 0.85);
       color: #fff;
-      font-size: 11px;
-      font-weight: bold;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -87,6 +139,12 @@ export function injectWatchStyle() {
       box-shadow: 0 2px 8px rgba(0,0,0,0.5);
       transition: transform 0.15s, background 0.15s;
       user-select: none;
+      padding: 0;
+    }
+    #yt-overlay-root .yt-tile svg {
+      width: 22px;
+      height: 22px;
+      pointer-events: none;
     }
     #yt-overlay-root .yt-tile:hover {
       background: rgba(60, 60, 60, 0.95);
@@ -107,7 +165,7 @@ export function injectWatchStyle() {
       transition: max-height 0.25s ease;
     }
     #yt-tile-list.expanded {
-      max-height: 260px;
+      max-height: 320px;
     }
 
     /* Main toggle button */
@@ -119,7 +177,6 @@ export function injectWatchStyle() {
       border: none;
       background: rgba(200, 50, 50, 0.9);
       color: #fff;
-      font-size: 22px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -127,6 +184,12 @@ export function injectWatchStyle() {
       box-shadow: 0 2px 10px rgba(0,0,0,0.6);
       transition: transform 0.2s, background 0.2s;
       user-select: none;
+      padding: 0;
+    }
+    #yt-overlay-btn svg {
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
     }
     #yt-overlay-btn:hover {
       background: rgba(220, 70, 70, 1);

@@ -1,4 +1,5 @@
 import { disabledMode, setDisabledMode } from "src/config";
+import { ICONS } from "src/overlay";
 
 export function toggleDisable() {
   if (disabledMode) {
@@ -21,7 +22,7 @@ export function disableAllRules() {
   if (!origBtn) {
     origBtn = document.createElement("button");
     origBtn.id = "yt-orig-btn";
-    origBtn.textContent = "orig";
+    origBtn.title = "Enable all hiding rules";
     origBtn.style.cssText = `
       position: fixed;
       bottom: 32px;
@@ -33,17 +34,21 @@ export function disableAllRules() {
       border: none;
       background: rgba(200, 50, 50, 0.9);
       color: #fff;
-      font-size: 13px;
-      font-weight: bold;
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     `;
     origBtn.addEventListener("click", toggleDisable);
     document.body.appendChild(origBtn);
   }
+  origBtn.innerHTML = ICONS.origOff;
+  // size the SVG inside
+  const svg = origBtn.querySelector("svg");
+  if (svg) { svg.style.width = "28px"; svg.style.height = "28px"; }
   origBtn.style.display = "flex";
-  origBtn.style.alignItems = "center";
-  origBtn.style.justifyContent = "center";
 }
 
 export function enableAllRules() {
