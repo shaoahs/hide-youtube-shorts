@@ -25,23 +25,39 @@ export function injectWatchStyle() {
       display: none !important;
     }
 
-    /* #secondary: independent scroll, fixed to viewport height */
+    /* Fix body overflow so position:fixed is relative to viewport not body.
+       Without this, zooming in causes the fixed sidebar to be clipped. */
+    html body {
+      overflow-x: visible !important;
+    }
+
+    /* #secondary: position:fixed overlay on the right.
+       Use visibility:hidden (not display:none) so YouTube still renders
+       the content and lazy-loading works. */
     ytd-watch-flexy #secondary {
-      display: none !important;
+      display: block !important;
       position: fixed !important;
-      top: 0;
-      right: 0;
-      width: 420px;
-      height: 100vh;
-      overflow-y: auto !important;
-      overflow-x: hidden;
-      z-index: 9990;
-      background: #0f0f0f;
-      box-sizing: border-box;
-      padding-top: 8px;
+      top: 0 !important;
+      right: 0 !important;
+      left: auto !important;
+      width: max(25vw, 200px) !important;
+      height: 100% !important;
+      max-height: 100dvh !important;
+      overflow-x: hidden !important;
+      overflow-y: scroll !important;
+      z-index: 9999 !important;
+      background: #0f0f0f !important;
+      box-sizing: border-box !important;
+      padding-top: 8px !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transform: translateX(100%) !important;
+      transition: transform 0.2s ease, visibility 0.2s !important;
     }
     ytd-watch-flexy #secondary.yt-side-visible {
-      display: block !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      transform: translateX(0) !important;
     }
 
     /* Fullscreen: #secondary lives inside #movie_player, overlay on the right */
@@ -50,7 +66,8 @@ export function injectWatchStyle() {
       position: absolute !important;
       top: 0;
       right: 0;
-      width: 380px;
+      width: 20%;
+      min-width: 180px;
       height: 100%;
       overflow-y: auto !important;
       overflow-x: hidden;

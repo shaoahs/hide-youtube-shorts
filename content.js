@@ -27,23 +27,39 @@
       display: none !important;
     }
 
-    /* #secondary: independent scroll, fixed to viewport height */
+    /* Fix body overflow so position:fixed is relative to viewport not body.
+       Without this, zooming in causes the fixed sidebar to be clipped. */
+    html body {
+      overflow-x: visible !important;
+    }
+
+    /* #secondary: position:fixed overlay on the right.
+       Use visibility:hidden (not display:none) so YouTube still renders
+       the content and lazy-loading works. */
     ytd-watch-flexy #secondary {
-      display: none !important;
+      display: block !important;
       position: fixed !important;
-      top: 0;
-      right: 0;
-      width: 420px;
-      height: 100vh;
-      overflow-y: auto !important;
-      overflow-x: hidden;
-      z-index: 9990;
-      background: #0f0f0f;
-      box-sizing: border-box;
-      padding-top: 8px;
+      top: 0 !important;
+      right: 0 !important;
+      left: auto !important;
+      width: max(25vw, 200px) !important;
+      height: 100% !important;
+      max-height: 100dvh !important;
+      overflow-x: hidden !important;
+      overflow-y: scroll !important;
+      z-index: 9999 !important;
+      background: #0f0f0f !important;
+      box-sizing: border-box !important;
+      padding-top: 8px !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transform: translateX(100%) !important;
+      transition: transform 0.2s ease, visibility 0.2s !important;
     }
     ytd-watch-flexy #secondary.yt-side-visible {
-      display: block !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      transform: translateX(0) !important;
     }
 
     /* Fullscreen: #secondary lives inside #movie_player, overlay on the right */
@@ -52,7 +68,8 @@
       position: absolute !important;
       top: 0;
       right: 0;
-      width: 380px;
+      width: 20%;
+      min-width: 180px;
       height: 100%;
       overflow-y: auto !important;
       overflow-x: hidden;
@@ -370,9 +387,52 @@
 
 //#endregion
 //#region src/filters/sidebar.js
+	(function patchBodyOverflow() {
+		const bodyStyle = document.body.style;
+		const proto = Object.getPrototypeOf(bodyStyle);
+		function interceptOverflow(propName) {
+			const descriptor = Object.getOwnPropertyDescriptor(proto, propName);
+			if (!descriptor || descriptor._patched) return;
+			const originalSet = descriptor.set;
+			Object.defineProperty(proto, propName, {
+				...descriptor,
+				_patched: true,
+				set(value) {
+					if (this === bodyStyle && (propName === "overflow" || propName === "overflowX")) originalSet.call(this, "visible");
+					else originalSet.call(this, value);
+				}
+			});
+		}
+		interceptOverflow("overflow");
+		interceptOverflow("overflowX");
+		bodyStyle.setProperty("overflow-x", "visible", "important");
+	})();
 	let _fsHandler = null;
+	let _layoutObserver = null;
 	function getSecondary() {
-		return document.querySelector("#secondary");
+		return document.querySelector("ytd-watch-flexy #columns #secondary") ?? document.querySelector("ytd-watch-flexy #secondary") ?? document.querySelector("#secondary");
+	}
+	function getSecondaryResults() {
+		return document.querySelector("ytd-watch-next-secondary-results-renderer");
+	}
+	function moveRendererToSecondary() {
+		const secondary = getSecondary();
+		if (!secondary) return;
+		const renderer = getSecondaryResults();
+		if (!renderer) return;
+		if (secondary.contains(renderer)) return;
+		renderer._ytOrigParent = renderer.parentElement;
+		renderer._ytOrigNextSibling = renderer.nextSibling;
+		secondary.appendChild(renderer);
+	}
+	function restoreRenderer() {
+		const renderer = getSecondaryResults();
+		if (!renderer) return;
+		const origParent = renderer._ytOrigParent;
+		if (!origParent) return;
+		origParent.insertBefore(renderer, renderer._ytOrigNextSibling ?? null);
+		delete renderer._ytOrigParent;
+		delete renderer._ytOrigNextSibling;
 	}
 	function getOriginalParent() {
 		return document.querySelector("ytd-watch-flexy #columns #primary")?.parentElement ?? document.querySelector("ytd-watch-flexy #columns") ?? document.querySelector("ytd-watch-flexy");
@@ -414,20 +474,60 @@
 			_fsHandler = null;
 		}
 	}
+	let _resizeTimer = null;
+	let _mutationObserver = null;
+	function _reapplySidebarDebounced() {
+		clearTimeout(_resizeTimer);
+		_resizeTimer = setTimeout(() => {
+			if (!sidebarVisible) return;
+			moveRendererToSecondary();
+			const secondary = getSecondary();
+			if (secondary && !secondary.classList.contains("yt-side-visible")) secondary.classList.add("yt-side-visible");
+		}, 200);
+	}
+	function setupLayoutObserver() {
+		if (_layoutObserver) return;
+		const primaryTarget = document.querySelector("#primary") ?? document.querySelector("ytd-watch-flexy");
+		if (primaryTarget) {
+			_layoutObserver = new ResizeObserver(_reapplySidebarDebounced);
+			_layoutObserver.observe(primaryTarget);
+		}
+		const flexy = document.querySelector("ytd-watch-flexy");
+		if (flexy) {
+			_mutationObserver = new MutationObserver(_reapplySidebarDebounced);
+			_mutationObserver.observe(flexy, { childList: true });
+		}
+	}
+	function teardownLayoutObserver() {
+		if (_layoutObserver) {
+			_layoutObserver.disconnect();
+			_layoutObserver = null;
+		}
+		if (_mutationObserver) {
+			_mutationObserver.disconnect();
+			_mutationObserver = null;
+		}
+		clearTimeout(_resizeTimer);
+		_resizeTimer = null;
+	}
 	function toggleSidebar() {
 		const btn = document.querySelector("#yt-tile-list .yt-tile:nth-child(3)");
 		const secondary = getSecondary();
 		if (!secondary) return;
 		if (sidebarVisible) {
 			secondary.classList.remove("yt-side-visible");
+			restoreRenderer();
 			setSidebarVisible(false);
 			if (btn) btn.classList.remove("active");
 			teardownFullscreenHandler();
+			teardownLayoutObserver();
 		} else {
+			moveRendererToSecondary();
 			secondary.classList.add("yt-side-visible");
 			setSidebarVisible(true);
 			if (btn) btn.classList.add("active");
 			setupFullscreenHandler();
+			setupLayoutObserver();
 			if (document.fullscreenElement) {
 				const player = document.getElementById("movie_player");
 				if (player) {
@@ -449,10 +549,12 @@
 				if (orig) orig.appendChild(secondary);
 			}
 		}
+		restoreRenderer();
 		setSidebarVisible(false);
 		const btn = document.querySelector("#yt-tile-list .yt-tile:nth-child(3)");
 		if (btn) btn.classList.remove("active");
 		teardownFullscreenHandler();
+		teardownLayoutObserver();
 	}
 
 //#endregion
@@ -462,6 +564,7 @@
 		else disableAllRules();
 	}
 	function disableAllRules() {
+		hideSidebar();
 		const el = document.getElementById("yt-overlay-style");
 		if (el) el.disabled = true;
 		setDisabledMode(true);
@@ -509,6 +612,120 @@
 		if (root) root.style.display = "";
 		const origBtn = document.getElementById("yt-orig-btn");
 		if (origBtn) origBtn.style.display = "none";
+	}
+
+//#endregion
+//#region ../mydebug/debug.js
+/**
+	* mydebug helper
+	* dev build  → push 訊息到 __mydebug_queue__ element，由 mydebug 擴充讀取
+	* prod build → 所有函式為 no-op，rolldown tree-shake 後完全消失
+	*
+	* 使用方式：
+	*   import { mydebug } from 'src/utils/debug.js';
+	*   mydebug.log("訊息", { key: value });
+	*   mydebug.selector("ytd-watch-flexy #secondary");
+	*   mydebug.css("#secondary", "position", "visibility");
+	*   mydebug.event("fullscreenchange", { isFullscreen: true });
+	*   mydebug.mutation("ytd-watch-flexy", mutationRecord);
+	*/
+	function getQueue() {
+		let q = document.getElementById("__mydebug_queue__");
+		if (!q) {
+			q = document.createElement("div");
+			q.id = "__mydebug_queue__";
+			q.style.cssText = "display:none!important";
+			document.documentElement.appendChild(q);
+		}
+		return q;
+	}
+	function push(entry) {
+		const item = document.createElement("span");
+		item.textContent = JSON.stringify(entry);
+		getQueue().appendChild(item);
+	}
+	const mydebug = _impl();
+	function _impl() {
+		return {
+			/** 一般 log */
+			log(msg, data) {
+				push({
+					type: "log",
+					msg,
+					data,
+					t: Date.now()
+				});
+			},
+			/**
+			* 查詢 selector 是否存在及目前狀態
+			* @param {string} sel
+			* @param {Element|null} [el] 已有 element 可直接傳入
+			* @returns {Element|null}
+			*/
+			selector(sel, el) {
+				el = el ?? document.querySelector(sel);
+				push({
+					type: "selector",
+					sel,
+					found: !!el,
+					classes: el ? [...el.classList].join(" ") : null,
+					attrs: el ? Object.fromEntries([...el.attributes].map((a) => [a.name, a.value])) : null,
+					t: Date.now()
+				});
+				return el;
+			},
+			/**
+			* 查詢 computed CSS 屬性
+			* @param {string} sel
+			* @param {...string} props CSS property names
+			*/
+			css(sel, ...props) {
+				const el = document.querySelector(sel);
+				if (!el) {
+					push({
+						type: "css",
+						sel,
+						found: false,
+						t: Date.now()
+					});
+					return;
+				}
+				const c = getComputedStyle(el);
+				push({
+					type: "css",
+					sel,
+					values: Object.fromEntries(props.map((p) => [p, c.getPropertyValue(p)])),
+					t: Date.now()
+				});
+			},
+			/**
+			* 記錄 event
+			* @param {string} name
+			* @param {object} [data]
+			*/
+			event(name, data) {
+				push({
+					type: "event",
+					name,
+					data,
+					t: Date.now()
+				});
+			},
+			/**
+			* 記錄 MutationObserver 的變化
+			* @param {string} target  描述被觀察的節點
+			* @param {MutationRecord} mutation
+			*/
+			mutation(target, mutation) {
+				push({
+					type: "mutation",
+					target,
+					added: mutation.addedNodes.length,
+					removed: mutation.removedNodes.length,
+					t: Date.now()
+				});
+			}
+		};
 	}
 
 //#endregion
@@ -581,7 +798,11 @@
 			cls: "yt-tile",
 			icon: ICONS.title,
 			title: "Toggle title",
-			onClick: toggleTitle
+			onClick: () => {
+				mydebug.log("titleBtn clicked", { url: location.href });
+				mydebug.selector("ytd-watch-metadata #title-row #title");
+				toggleTitle();
+			}
 		});
 		const controlsBtn = makeBtn({
 			cls: "yt-tile",

@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.7.0] - 2026-10-07
+
+### Added
+- 加入 `mydebug` debug bridge 整合，開發時可將 selector、CSS、event、mutation 等資訊輸出到 bash terminal
+- `src/utils/debug.js`（透過 `utils` alias 指向 `../mydebug/debug.js`）
+
+### Changed
+- `rolldown.config.js` 加入 `utils` alias 指向 `../mydebug/`，搬家時只需改一行
+- `rolldown.config.js` 加入 `replace-debug` plugin，以 `__DEBUG__` 控制 debug 程式碼注入
+  - `bun run dev` → `__DEBUG__ = true`，debug 有作用
+  - `bun run build` → `__DEBUG__ = false`，rolldown tree-shake 後 debug 程式碼完全消失
+- `package.json` 新增 `dev` script（`NODE_ENV=development`），`build` 加上 minify
+
+### Fixed
+- sidebar 在瀏覽器縮放非 100% 時 scrollbar 消失的問題
+  - `left: calc(100vw - ...)` 改為 `right: 0`，定位更可靠
+  - `height: 100vh` 改為 `height: 100%` + `max-height: 100dvh`，縮放時正確更新
+  - `overflow-y: auto` 改為 `overflow-y: scroll`，強制顯示 scrollbar
+
+---
+
 ## [1.6.0] - 2026-10-05
 
 ### Added

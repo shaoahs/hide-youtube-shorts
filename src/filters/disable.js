@@ -1,5 +1,6 @@
 import { disabledMode, setDisabledMode } from "src/config";
 import { ICONS } from "src/overlay";
+import { hideSidebar } from "src/filters/sidebar";
 
 export function toggleDisable() {
   if (disabledMode) {
@@ -10,6 +11,11 @@ export function toggleDisable() {
 }
 
 export function disableAllRules() {
+  // Close sidebar first so renderer is restored to its original position
+  // before we disable the stylesheet (otherwise #secondary display:none kicks
+  // in and the renderer gets stuck in a hidden container).
+  hideSidebar();
+
   const el = document.getElementById("yt-overlay-style");
   if (el) el.disabled = true;
   setDisabledMode(true);

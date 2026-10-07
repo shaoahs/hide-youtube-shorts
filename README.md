@@ -67,21 +67,40 @@
 # 安裝依賴
 bun install
 
-# 打包（輸出至 content.js）
-bun run build
+# 開發模式（含 debug 輸出）
+bun run dev
 
-# 監聽檔案變更自動重新打包
+# 監聽檔案變更自動重新打包（含 debug）
 bun run watch
+
+# 發布打包（debug 程式碼完全移除，啟用 minify）
+bun run build
 ```
 
-import 路徑使用兩個 alias：
+import 路徑使用三個 alias：
 
 ```js
-import { ... } from "src/config";    // src/ 下的主模組
-import { ... } from "filters/title"; // src/filters/ 下的子模組
+import { ... } from "src/config";       // src/ 下的主模組
+import { ... } from "filters/title";    // src/filters/ 下的子模組
+import { mydebug } from "utils/debug.js"; // ../mydebug/debug.js
 ```
 
 alias 定義於 `rolldown.config.js` 的 `resolve.alias`。
+
+### Debug
+
+開發時可搭配 [mydebug](../mydebug/) 擴充功能，將 selector、CSS、event、mutation 輸出到 bash terminal：
+
+```js
+import { mydebug } from "utils/debug.js";
+
+mydebug.log("訊息", { key: "value" });
+mydebug.selector("ytd-watch-flexy #secondary");
+mydebug.css("#secondary", "position", "visibility");
+mydebug.event("fullscreenchange", { isFullscreen: true });
+```
+
+`bun run build` 後 debug 程式碼完全消失，不需手動移除。
 
 ## 打包
 

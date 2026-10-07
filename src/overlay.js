@@ -4,6 +4,7 @@ import { toggleTitle, removeClonedTitle } from "filters/title";
 import { toggleControls, removeClonedControls, enableControls } from "filters/controls";
 import { toggleSidebar, hideSidebar } from "filters/sidebar";
 import { toggleDisable, enableAllRules } from "filters/disable";
+import { mydebug } from "utils/debug.js";
 
 // Auto-hide delays
 const INITIAL_HIDE_DELAY = 6000; // 6 s after first show
@@ -99,7 +100,11 @@ export function buildOverlay() {
   const tileList = document.createElement("div");
   tileList.id = "yt-tile-list";
 
-  const titleBtn    = makeBtn({ cls: "yt-tile", icon: ICONS.title, title: "Toggle title",                    onClick: toggleTitle });
+  const titleBtn    = makeBtn({ cls: "yt-tile", icon: ICONS.title, title: "Toggle title", onClick: () => {
+    mydebug.log("titleBtn clicked", { url: location.href });
+    mydebug.selector("ytd-watch-metadata #title-row #title");
+    toggleTitle();
+  } });
   const controlsBtn = makeBtn({ cls: "yt-tile", icon: ICONS.ctrl,  title: "Toggle controls",                 onClick: toggleControls });
   const sideBtn     = makeBtn({ cls: "yt-tile", icon: ICONS.side,  title: "Toggle sidebar",                  onClick: toggleSidebar });
   const disableBtn  = makeBtn({ cls: "yt-tile", icon: ICONS.orig,  title: "Disable / Enable all hiding rules", onClick: toggleDisable });
